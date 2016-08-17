@@ -1,13 +1,16 @@
 package com.fasterxml.jackson.databind.deser.impl;
 
-import java.io.IOException;
-import java.util.*;
-
-import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.databind.*;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.deser.SettableBeanProperty;
 import com.fasterxml.jackson.databind.jsontype.TypeDeserializer;
 import com.fasterxml.jackson.databind.util.TokenBuffer;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Helper class that is used to flatten JSON structure when using
@@ -165,8 +168,14 @@ public class ExternalTypeHandler
                 }
             } else if (_tokens[i] == null) {
                 SettableBeanProperty prop = _properties[i].getProperty();
-                ctxt.reportMappingException("Missing property '%s' for external type id '%s'",
-                        prop.getName(), _properties[i].getTypePropertyName());
+
+                if (prop.isRequired() ||
+                        ctxt.isEnabled(DeserializationFeature.FAIL_ON_EXTERNAL_TYPE_ID_MISSING_PROPERTY)) {
+                    ctxt.reportMappingException("Missing property '%s' for external type id '%s'",
+                            prop.getName(), _properties[i].getTypePropertyName());
+                }
+
+                return bean;
             }
             _deserializeAndSet(p, ctxt, bean, i, typeId);
         }
